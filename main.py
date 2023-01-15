@@ -26,7 +26,7 @@ yStartSpeed = 0
 
 def create_box():
     global boxNumber
-    boxSize.append(sizeSlider.get() * 20)
+    boxSize.append(massSlider.get() * 20)
     boxMass.append(massSlider.get())
     frictionCoefficient.append(frictionCoeffSlider.get())
     frictionAccel.append(frictionCoefficient[boxNumber] * gValue * 0.1225)
@@ -56,6 +56,7 @@ def menu_label_change(boxNumber):
     update_speed_label()
     update_height_label()
     update_mass_label()
+    update_coeff_label()
     update_kinetic_label()
     update_grav_label()
     addXSpeed.config(bg="Red")
@@ -149,6 +150,8 @@ def update_kinetic_label():
     boxKineticLabel.config(text=f"Kinetic Energy: {0.5 * boxMass[selectedBox] * (boxSpeedY[selectedBox] * 2) ** 2:.2f} J")
 def update_grav_label():
     boxGravLabel.config(text= f"Gravitational Energy: {boxMass[selectedBox] * gValue * boxHeight[selectedBox]:.2f} J")
+def update_coeff_label():
+    boxFricLabel.config(text= f"Friction Coefficient: {frictionCoefficient[selectedBox]:.2f}")
 
 def toggle_simul():
     global simulating
@@ -173,12 +176,11 @@ def mainloop():
     global selectedBox
     for i in range(len(boxes)):
         boxHeight[i] = round((canvasHeight - canvas.coords(boxes[i])[3]) / 20, 2)
-        # Gravity
         if canvas.coords(boxes[i])[1] < canvasHeight - boxSize[i]:  # see if it's above the ground
             boxSpeedY[i] += gravityAccel
             if canvas.coords(boxes[i])[1] + boxSpeedY[i] > canvasHeight - boxSize[i]:  # On ground
                 canvas.moveto(boxes[i], canvas.coords(boxes[i])[0]-1, canvasHeight - boxSize[i])
-                canvas.moveto(boxNumberDisplay, canvas.coords(boxes[i])[0]-1 + boxSize[i] / 2 - 7, canvas.coords(boxes[i])[1] + boxSize[i] / 2 -7 ,)
+                canvas.moveto(boxNumberDisplay[i], canvas.coords(boxes[i])[0]-1 + boxSize[i] / 2 - 7, canvas.coords(boxes[i])[1] + boxSize[i] / 2 - 7)
                 boxSpeedY[i] = 0
             else:   # Above ground
                 canvas.move(boxes[i], boxSpeedX[i], boxSpeedY[i])
@@ -227,12 +229,6 @@ exitButton.pack(side=tk.TOP, anchor=tk.E, fill=tk.X, padx=5, pady=2)
 # Create Box
 boxButton = tk.Button(root, text="New Box", relief='solid', borderwidth=2, command=create_box)
 boxButton.pack(side=tk.TOP, anchor=tk.E, fill=tk.X, padx=5, pady=2)
-# Size Slider Label
-sizeSliderLabel = tk.Label(root, text="Box Size", font="lucida 12")
-sizeSliderLabel.pack(side=tk.TOP, anchor=tk.E, fill=tk.X, padx=5)
-# Size slider
-sizeSlider = tk.Scale(root, from_=1, to=10, orient=tk.HORIZONTAL)
-sizeSlider.pack(side=tk.TOP, anchor=tk.E, fill=tk.X, padx=5)
 # Mass Slider Label
 massSliderLabel = tk.Label(root, text="Box Mass", font="lucida 12")
 massSliderLabel.pack(side=tk.TOP, anchor=tk.E, fill=tk.X, padx=5)
@@ -287,6 +283,9 @@ boxHeightLabel.pack(side=tk.TOP, anchor=tk.E, pady=2, fill= tk.X)
 # Mass
 boxMassLabel = tk.Label(root, text="Box Mass: ", font="lucida 10")
 boxMassLabel.pack(side=tk.TOP, anchor=tk.E, pady=2, fill= tk.X)
+# Friction Coefficient
+boxFricLabel = tk.Label(root, text="Friction Coefficient: ", font="lucida 10")
+boxFricLabel.pack(side=tk.TOP, anchor=tk.E, pady=2, fill= tk.X)
 # Kinetic Energy
 boxKineticLabel = tk.Label(root, text="Kinetic Energy: ", font="lucida 10")
 boxKineticLabel.pack(side=tk.TOP, anchor=tk.E, pady=2, fill= tk.X)
