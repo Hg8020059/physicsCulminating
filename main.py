@@ -176,16 +176,19 @@ def mainloop():
     global selectedBox
     for i in range(len(boxes)):
         boxHeight[i] = round((canvasHeight - canvas.coords(boxes[i])[3]) / 20, 2)
+        # Movement if in air
         if canvas.coords(boxes[i])[1] < canvasHeight - boxSize[i]:  # see if it's above the ground
             boxSpeedY[i] += gravityAccel
-            if canvas.coords(boxes[i])[1] + boxSpeedY[i] > canvasHeight - boxSize[i]:  # On ground
+            if canvas.coords(boxes[i])[1] + boxSpeedY[i] > canvasHeight - boxSize[i]:  # Land on ground
                 canvas.moveto(boxes[i], canvas.coords(boxes[i])[0]-1, canvasHeight - boxSize[i])
                 canvas.moveto(boxNumberDisplay[i], canvas.coords(boxes[i])[0]-1 + boxSize[i] / 2 - 7, canvas.coords(boxes[i])[1] + boxSize[i] / 2 - 7)
                 boxSpeedY[i] = 0
-            else:   # Above ground
+            else:
                 canvas.move(boxes[i], boxSpeedX[i], boxSpeedY[i])
                 canvas.move(boxNumberDisplay[i], boxSpeedX[i], boxSpeedY[i])
-        else:
+
+    # Movement if on ground
+        if canvas.coords(boxes[i])[1] > canvasHeight - boxSize[i]:
             if boxSpeedX[i] > 0:
                 boxSpeedX[i] -= frictionAccel[i]
                 boxSpeedX[i] = max(boxSpeedX[i], 0)
