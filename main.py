@@ -27,10 +27,10 @@ yStartSpeed = 0
 
 def create_box():
     global boxNumber
-    boxSize.append(sizeSlider.get() * 20)
+    boxSize.append(massSlider.get() * 20)
     boxMass.append(massSlider.get())
     frictionCoefficient.append(frictionCoeffSlider.get())
-    frictionAccel.append(frictionCoefficient[boxNumber] * gValue * 0.1225)
+    frictionAccel.append(frictionCoefficient[boxNumber] * gValue * 0.0125)
     boxSpeedY.append(0)
     boxSpeedX.append(0)
     update_option_menu(boxNumber)
@@ -67,6 +67,7 @@ def menu_label_change(boxNumber):
     update_speed_label()
     update_height_label()
     update_mass_label()
+    update_coeff_label()
     update_kinetic_label()
     update_grav_label()
     addXSpeed.config(bg="Red")
@@ -130,8 +131,10 @@ def x_speed_entered(event):
             addXSpeed.config(bg="Red")
     except TypeError:
         tk.messagebox.showerror(title="Error", message="No Box Selected")
+        addXSpeed.config(bg="Red")
     except ValueError:
         tk.messagebox.showerror(title="Error", message="Not a number")
+        addXSpeed.config(bg="Red")
 
 def y_speed_entered(event):
     try:
@@ -143,8 +146,10 @@ def y_speed_entered(event):
             addYSpeed.config(bg="Red")
     except TypeError:
         tk.messagebox.showerror(title="Error", message="No Box Selected")
+        addXSpeed.config(bg="Red")
     except ValueError:
         tk.messagebox.showerror(title="Error", message="Not a number")
+        addXSpeed.config(bg="Red")
 
 def update_speedX_label():
     boxXSpeedLabel.config(text=f"Box Speed X: {boxSpeedX[selectedBox] * 2:.2f} m/s")
@@ -160,6 +165,12 @@ def update_kinetic_label():
     boxKineticLabel.config(text=f"Kinetic Energy: {0.5 * boxMass[selectedBox] * (boxSpeedY[selectedBox] * 2) ** 2:.2f} J")
 def update_grav_label():
     boxGravLabel.config(text= f"Gravitational Energy: {boxMass[selectedBox] * gValue * boxHeight[selectedBox]:.2f} J")
+def update_coeff_label():
+    boxFricLabel.config(text= f"Friction Coefficient: {frictionCoefficient[selectedBox]:.2f}")
+
+def space_check(event):
+    if event.keysym == "space":
+        toggle_simul()
 
 def toggle_simul():
     global simulating
@@ -183,18 +194,9 @@ def mainloop():
     global simulTime
     global selectedBox
     for i in range(len(boxes)):
-        boxHeight[i] = round((canvasHeight - canvas.coords(boxes[i])[3]) / 20, 2)
-        # Gravity
-        if canvas.coords(boxes[i])[1] < canvasHeight - boxSize[i]:  # see if it's above the ground
-            boxSpeedY[i] += gravityAccel
-            if canvas.coords(boxes[i])[1] + boxSpeedY[i] > canvasHeight - boxSize[i]:  # On ground
-                canvas.moveto(boxes[i], canvas.coords(boxes[i])[0]-1, canvasHeight - boxSize[i])
-                canvas.moveto(boxNumberDisplay, canvas.coords(boxes[i])[0]-1 + boxSize[i] / 2 - 7, canvas.coords(boxes[i])[1] + boxSize[i] / 2 -7 ,)
-                boxSpeedY[i] = 0
-            else:   # Above ground
-                canvas.move(boxes[i], boxSpeedX[i], boxSpeedY[i])
-                canvas.move(boxNumberDisplay[i], boxSpeedX[i], boxSpeedY[i])
-        else:
+        canvas.move(boxes[i], boxSpeedX[i], boxSpeedY[i])
+        canvas.move(boxNumberDisplay[i], boxSpeedX[i], boxSpeedY[i])
+        if round(canvas.coords(boxes[i])[3]) - 1 == canvasHeight:
             if boxSpeedX[i] > 0:
                 boxSpeedX[i] -= frictionAccel[i]
                 boxSpeedX[i] = max(boxSpeedX[i], 0)
@@ -205,8 +207,31 @@ def mainloop():
                 boxSpeedX[i] = min(boxSpeedX[i], 0)
                 canvas.move(boxes[i], boxSpeedX[i], 0)
                 canvas.move(boxNumberDisplay[i], boxSpeedX[i], 0)
+        elif canvas.coords(boxes[i])[3] + boxSpeedY[i] > canvasHeight:  # Hit ground
+            canvas.moveto(boxes[i], canvas.coords(boxes[i])[0]-1, canvasHeight - boxSize[i])
+            canvas.moveto(boxNumberDisplay[i], canvas.coords(boxes[i])[0]-1 + boxSize[i] / 2 - 7, canvas.coords(boxes[i])[1] + boxSize[i] / 2 - 7)
+            boxSpeedY[i] = 0
+        else:
+            boxSpeedY[i] += gravityAccel
+        # Hit right wall
+        if canvas.coords(boxes[i])[2] + boxSpeedX[i] > canvasWidth:
+            canvas.moveto(boxes[i], canvasWidth - boxSize[i], round(canvas.coords(boxes[i])[1]) - 1)
+            canvas.moveto(boxNumberDisplay[i], canvas.coords(boxes[i])[0]-1 + boxSize[i] / 2 - 7, canvas.coords(boxes[i])[1] + boxSize[i] / 2 - 7)
+            boxSpeedX[i] = 0
+        # Hit left wall
+        if canvas.coords(boxes[i])[0] + boxSpeedX[i] < 0:
+            canvas.moveto(boxes[i], 0, round(canvas.coords(boxes[i])[1]) - 1)
+            canvas.moveto(boxNumberDisplay[i], canvas.coords(boxes[i])[0] - 1 + boxSize[i] / 2 - 7, canvas.coords(boxes[i])[1] + boxSize[i] / 2 - 7)
+            boxSpeedX[i] = 0
+        # Hit roof
+        if canvas.coords(boxes[i])[1] + boxSpeedY[i] < 0:
+            canvas.moveto(boxes[i], canvas.coords(boxes[i])[0]-1, 0)
+            canvas.moveto(boxNumberDisplay[i], canvas.coords(boxes[i])[0] - 1 + boxSize[i] / 2 - 7, canvas.coords(boxes[i])[1] + boxSize[i] / 2 - 7)
+            boxSpeedY[i] = 0
+
     # This lets the program simulate properly without having a box selected
     try:
+        update_speedX_label()
         update_speedY_label()
         update_speed_label()
         update_height_label()
@@ -238,12 +263,6 @@ exitButton.pack(side=tk.TOP, anchor=tk.E, fill=tk.X, padx=5, pady=2)
 # Create Box
 boxButton = tk.Button(root, text="New Box", relief='solid', borderwidth=2, command=create_box)
 boxButton.pack(side=tk.TOP, anchor=tk.E, fill=tk.X, padx=5, pady=2)
-# Size Slider Label
-sizeSliderLabel = tk.Label(root, text="Box Size", font="lucida 12")
-sizeSliderLabel.pack(side=tk.TOP, anchor=tk.E, fill=tk.X, padx=5)
-# Size slider
-sizeSlider = tk.Scale(root, from_=1, to=10, orient=tk.HORIZONTAL)
-sizeSlider.pack(side=tk.TOP, anchor=tk.E, fill=tk.X, padx=5)
 # Mass Slider Label
 massSliderLabel = tk.Label(root, text="Box Mass", font="lucida 12")
 massSliderLabel.pack(side=tk.TOP, anchor=tk.E, fill=tk.X, padx=5)
@@ -298,6 +317,9 @@ boxHeightLabel.pack(side=tk.TOP, anchor=tk.E, pady=2, fill= tk.X)
 # Mass
 boxMassLabel = tk.Label(root, text="Box Mass: ", font="lucida 10")
 boxMassLabel.pack(side=tk.TOP, anchor=tk.E, pady=2, fill= tk.X)
+# Friction Coefficient
+boxFricLabel = tk.Label(root, text="Friction Coefficient: ", font="lucida 10")
+boxFricLabel.pack(side=tk.TOP, anchor=tk.E, pady=2, fill= tk.X)
 # Kinetic Energy
 boxKineticLabel = tk.Label(root, text="Kinetic Energy: ", font="lucida 10")
 boxKineticLabel.pack(side=tk.TOP, anchor=tk.E, pady=2, fill= tk.X)
@@ -317,5 +339,6 @@ canvas.bind('<ButtonRelease>', drop_box)
 canvas.bind('<Motion>', move_box)
 addXSpeed.bind('<KeyPress>', x_speed_entered)
 addYSpeed.bind('<KeyPress>', y_speed_entered)
+root.bind('<KeyPress>', space_check)
 
 root.mainloop()
