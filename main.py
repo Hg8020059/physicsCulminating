@@ -1,6 +1,7 @@
 import tkinter as tk
 import tkinter.messagebox
 import math
+from PIL import Image, ImageFont
 
 # Variables
 boxes = []
@@ -34,13 +35,23 @@ def create_box():
     boxSpeedY.append(0)
     boxSpeedX.append(0)
     update_option_menu(boxNumber)
-    boxes.append(canvas.create_rectangle(canvasWidth / 2, canvasHeight / 2, canvasWidth / 2 + boxSize[boxNumber],
-                                         canvasHeight / 2 + boxSize[boxNumber], fill="grey"))
-    boxNumberDisplay.append(canvas.create_text(canvas.coords(boxes[boxNumber])[0] + boxSize[boxNumber] / 2,
-                                               canvas.coords(boxes[boxNumber])[1] + boxSize[boxNumber] / 2,
-                                               text=boxNumber + 1, fill="White", font="lucida 15"))
+    boxes.append(canvas.create_rectangle(canvasWidth / 2, canvasHeight / 2, canvasWidth / 2 + boxSize[boxNumber], canvasHeight / 2 + boxSize[boxNumber], stipple=genImage(boxSize[boxNumber], boxSize[boxNumber], boxNumber+1)))
+    # boxNumberDisplay.append(canvas.create_text(canvas.coords(boxes[boxNumber])[0] + boxSize[boxNumber] / 2, canvas.coords(boxes[boxNumber])[1] + boxSize[boxNumber] / 2,text=boxNumber + 1, fill="White", font="lucida 15"))
     boxHeight.append(round((canvasHeight - canvas.coords(boxes[boxNumber])[3])/20, 2))
     boxNumber += 1
+
+
+
+def genImage(height, width, text):
+    img = Image.new('1', (width, height), "black") # Create a new black image
+    img_w, img_h = img.size
+    font = ImageFont.truetype('arial.ttf', 15)
+    mask = font.getmask(str(text), mode='1')
+    mask_w, mask_h = mask.size
+    d = Image.core.draw(img.im, 0)
+    d.draw_bitmap(((img_w - mask_w)/2, (img_h - mask_h)/2), mask, 255)
+    img.save(f'{boxNumber+1}.xbm', 'XBM')
+    return f'@{boxNumber+1}.xbm' 
 
 def update_option_menu(boxNumber):
     global selectedTab
