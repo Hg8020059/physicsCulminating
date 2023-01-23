@@ -23,13 +23,14 @@ selectedTab = None
 selectedBox = None
 xStartSpeed = 0
 yStartSpeed = 0
+Friction = True
 
 def create_box():
     global boxNumber
     boxSize.append(massSlider.get() * 20)
     boxMass.append(massSlider.get())
     frictionCoefficient.append(frictionCoeffSlider.get())
-    frictionAccel.append(frictionCoefficient[boxNumber] * gValue * 0.0125)
+    frictionAccel.append(frictionCoefficient[boxNumber] * gValue * boxMass[boxNumber] * 0.0125)
     boxSpeedY.append(0)
     boxSpeedX.append(0)
     update_option_menu(boxNumber)
@@ -55,6 +56,7 @@ def menu_label_change(boxNumber):
     update_speedX_label()
     update_speed_label()
     update_height_label()
+    update_dist_label()
     update_mass_label()
     update_coeff_label()
     update_kinetic_label()
@@ -91,6 +93,7 @@ def move_box(event):
 
         if selectedBox == boxHeld:
             update_height_label()
+            update_dist_label()
             update_grav_label()
 
 
@@ -135,19 +138,21 @@ def y_speed_entered(event):
             addYSpeed.config(bg="Red")
     except TypeError:
         tk.messagebox.showerror(title="Error", message="No Box Selected")
-        addXSpeed.config(bg="Red")
+        addYSpeed.config(bg="Red")
     except ValueError:
         tk.messagebox.showerror(title="Error", message="Not a number")
-        addXSpeed.config(bg="Red")
+        addYSpeed.config(bg="Red")
 
 def update_speedX_label():
     boxXSpeedLabel.config(text=f"Box Speed X: {boxSpeedX[selectedBox] * 2:.2f} m/s")
 def update_speedY_label():
     boxYSpeedLabel.config(text=f"Box Speed Y: {boxSpeedY[selectedBox] * -2:.2f} m/s")
 def update_speed_label():
-    boxSpeedLabel.config(text=f"Total Speed: {math.sqrt(abs((boxSpeedX[selectedBox]*2)**2) + abs((boxSpeedY[selectedBox] * 2)**2)):.2f}")
+    boxSpeedLabel.config(text=f"Total Speed: {math.sqrt(abs((boxSpeedX[selectedBox]*2)**2) + abs((boxSpeedY[selectedBox] * 2)**2)):.2f} m/s")
 def update_height_label():
     boxHeightLabel.config(text=f"Box Height: {boxHeight[selectedBox]:.2f} m")
+def update_dist_label():
+    boxDistLabel.config(text=f"Box Distance: {canvas.coords(boxes[selectedBox])[0]/20:.2f} m")
 def update_mass_label():
     boxMassLabel.config(text=f"Box Mass: {boxMass[selectedBox]:.2f} kg")
 def update_kinetic_label():
@@ -160,6 +165,15 @@ def update_coeff_label():
 def space_check(event):
     if event.keysym == "space":
         toggle_simul()
+
+def friction_toggle():
+    global Friction
+    if Friction:
+        Friction = False
+        frictionToggleLabel.config(text="Friction Off")
+    elif not Friction:
+        Friction = True
+        frictionToggleLabel.config(text="Friction On")
 
 def toggle_simul():
     global simulating
@@ -186,16 +200,19 @@ def mainloop():
         canvas.move(boxes[i], boxSpeedX[i], boxSpeedY[i])
         canvas.move(boxNumberDisplay[i], boxSpeedX[i], boxSpeedY[i])
         if round(canvas.coords(boxes[i])[3]) - 1 == canvasHeight:
-            if boxSpeedX[i] > 0:
-                boxSpeedX[i] -= frictionAccel[i]
-                boxSpeedX[i] = max(boxSpeedX[i], 0)
-                canvas.move(boxes[i], boxSpeedX[i], 0)
-                canvas.move(boxNumberDisplay[i], boxSpeedX[i], 0)
-            elif boxSpeedX[i] < 0:
-                boxSpeedX[i] += frictionAccel[i]
-                boxSpeedX[i] = min(boxSpeedX[i], 0)
-                canvas.move(boxes[i], boxSpeedX[i], 0)
-                canvas.move(boxNumberDisplay[i], boxSpeedX[i], 0)
+            if Friction:
+                if boxSpeedX[i] > 0:
+                    boxSpeedX[i] -= frictionAccel[i]
+                    boxSpeedX[i] = max(boxSpeedX[i], 0)
+                    canvas.move(boxes[i], boxSpeedX[i], 0)
+                    canvas.move(boxNumberDisplay[i], boxSpeedX[i], 0)
+                elif boxSpeedX[i] < 0:
+                    boxSpeedX[i] += frictionAccel[i]
+                    boxSpeedX[i] = min(boxSpeedX[i], 0)
+                    canvas.move(boxes[i], boxSpeedX[i], 0)
+                    canvas.move(boxNumberDisplay[i], boxSpeedX[i], 0)
+            elif not Friction:
+                boxSpeedX[i] = 0
         elif canvas.coords(boxes[i])[3] + boxSpeedY[i] > canvasHeight:  # Hit ground
             canvas.moveto(boxes[i], canvas.coords(boxes[i])[0]-1, canvasHeight - boxSize[i])
             canvas.moveto(boxNumberDisplay[i], canvas.coords(boxes[i])[0]-1 + boxSize[i] / 2 - 7, canvas.coords(boxes[i])[1] + boxSize[i] / 2 - 7)
@@ -217,13 +234,14 @@ def mainloop():
             canvas.moveto(boxes[i], canvas.coords(boxes[i])[0]-1, 0)
             canvas.moveto(boxNumberDisplay[i], canvas.coords(boxes[i])[0] - 1 + boxSize[i] / 2 - 7, canvas.coords(boxes[i])[1] + boxSize[i] / 2 - 7)
             boxSpeedY[i] = 0
-
+    boxHeight[i] = round((canvasHeight - canvas.coords(boxes[i])[3])/20, 2)
     # This lets the program simulate properly without having a box selected
     try:
         update_speedX_label()
         update_speedY_label()
         update_speed_label()
         update_height_label()
+        update_dist_label()
         update_kinetic_label()
         update_grav_label()
     except:
@@ -303,6 +321,9 @@ boxSpeedLabel.pack(side=tk.TOP, anchor=tk.E, pady=2, fill= tk.X)
 # Distance from ground
 boxHeightLabel = tk.Label(root, text="Box Height: ", font="lucida 10")
 boxHeightLabel.pack(side=tk.TOP, anchor=tk.E, pady=2, fill= tk.X)
+# Distance from left wall
+boxDistLabel = tk.Label(root, text="Box Distance: ", font="lucida 10")
+boxDistLabel.pack(side=tk.TOP, anchor=tk.E, pady=2, fill= tk.X)
 # Mass
 boxMassLabel = tk.Label(root, text="Box Mass: ", font="lucida 10")
 boxMassLabel.pack(side=tk.TOP, anchor=tk.E, pady=2, fill= tk.X)
@@ -315,6 +336,12 @@ boxKineticLabel.pack(side=tk.TOP, anchor=tk.E, pady=2, fill= tk.X)
 # Gravitational Energy
 boxGravLabel = tk.Label(root, text="Gravitational Energy: ", font="lucida 10")
 boxGravLabel.pack(side=tk.TOP, anchor=tk.E, pady=2, fill= tk.X)
+
+# Toggle Friction Button
+frictionToggle = tk.Button(root, text="Toggle Friction", relief='solid', borderwidth=2, command=friction_toggle)
+frictionToggle.pack(side=tk.TOP, anchor=tk.E, fill=tk.X, padx=5, pady=4)
+frictionToggleLabel = tk.Label(root, text="Friction On")
+frictionToggleLabel.pack(side=tk.TOP, anchor=tk.E, pady=2, fill= tk.X)
 
 # Running time
 runTimeLabel = tk.Label(root, text = "Running Time: ", font="lucida 10")
