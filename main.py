@@ -19,8 +19,8 @@ boxNumber = 0
 boxHeld = None
 holdingBox = False
 simulating = False
-gravityAccel = 9.8 * 0.0125  # 9.8m/s^2 to P/F^2 (*0.0125)
-gValue = 9.8 # For calculations
+gValue = 9.8  # For calculations
+gravityAccel = gValue * 0.0125  # 9.8m/s^2 to P/F^2 (*0.0125)
 simulTime = 0
 selectedTab = None
 selectedBox = None
@@ -69,6 +69,7 @@ def menu_label_change(boxNumber):
     addXSpeed.config(bg="Red")
     addYSpeed.config(bg="Red")
 
+# Clear all arrays and important variables
 def delete_boxes():
     global boxNumber
     global selectedBox
@@ -85,10 +86,19 @@ def delete_boxes():
     boxSpeedX.clear()
     boxHeight.clear()
     frictionCoefficient.clear()
+    boxXSpeedLabel.config(text="Box Speed X: ")
+    boxYSpeedLabel.config(text="Box Speed Y: ")
+    boxSpeedLabel.config(text="Total Speed: ")
+    boxHeightLabel.config(text="Box Height: ")
+    boxDistLabel.config(text="Box Distance: ")
+    boxMassLabel.config(text="Box Mass: ")
+    boxKineticLabel.config(text="Kinetic Energy: ")
+    boxGravLabel.config(text="Gravitational Energy: ")
+    boxFricLabel.config(text=f"Friction Coefficient: ")
     boxNumber = 0
     selectedBox = None
 
-# see if where you clicked lines up with any boxes, and if so "grabs" it
+# see if you clicked within the bounds of any box, and if so "grabs" it
 def grab_box(event):
     global holdingBox
     global boxHeld
@@ -137,6 +147,7 @@ def x_speed_entered(event):
         tk.messagebox.showerror(title="Error", message="Not a number")
         addXSpeed.config(bg="Red")
 
+# Gets the y speed
 def y_speed_entered(event):
     try:
         if event.keysym == "Return":
@@ -283,7 +294,7 @@ canvas.pack(side=tk.LEFT)
 # Exit button
 exitButton = tk.Button(root, text="Exit", relief='solid', borderwidth=2, command=lambda: quit())
 exitButton.pack(side=tk.TOP, anchor=tk.E, fill=tk.X, padx=5, pady=2)
-# Create Box
+# Create Box button
 boxButton = tk.Button(root, text="New Box", relief='solid', borderwidth=2, command=create_box)
 boxButton.pack(side=tk.TOP, anchor=tk.E, fill=tk.X, padx=5, pady=2)
 # Mass Slider Label
